@@ -1,0 +1,17 @@
+{
+	"ulid": "01JP234W5409E4RV5Y1ZDCXQMR",
+	"minTime": 1741661023752,
+	"maxTime": 1741665600000,
+	"stats": {
+		"numSamples": 4530,
+		"numSeries": 15,
+		"numChunks": 47
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01JP234W5409E4RV5Y1ZDCXQMR"
+		]
+	},
+	"version": 1
+}

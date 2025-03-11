@@ -1,0 +1,17 @@
+{
+	"ulid": "01JP1MT74885NKGRF44GFCVHV7",
+	"minTime": 1741653115622,
+	"maxTime": 1741658400000,
+	"stats": {
+		"numSamples": 2395,
+		"numSeries": 5,
+		"numChunks": 25
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01JP1MT74885NKGRF44GFCVHV7"
+		]
+	},
+	"version": 1
+}
