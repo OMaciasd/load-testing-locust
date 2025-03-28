@@ -93,3 +93,4 @@ supervisord.conf
 
 # Archivos CSV de prueba
 users.csv
+data/chunks_head/*
