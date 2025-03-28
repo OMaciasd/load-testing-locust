@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'jaeger'
+    static_configs:
+      - targets: ['jaeger:5778']  # Asegúrate de que este puerto sea correcto
+
+  - job_name: 'locust_exporter'
+    static_configs:
+      - targets: ['locust_exporter:9646']  # El puerto donde Locust Exporter expone las métricas
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['prom-exporter:9100']  # El puerto donde Node Exporter expone las métricas
+
+  - job_name: 'locust'
+    static_configs:
+      - targets: ['localhost:8088']

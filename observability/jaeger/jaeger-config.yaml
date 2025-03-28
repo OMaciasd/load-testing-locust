@@ -1,0 +1,26 @@
+collector:
+  num_workers: 50
+  queue_size: 2000
+
+sampling:
+  strategies_file: /etc/jaeger/sampling.json
+
+storage:
+  type: badger  # O "elasticsearch", "cassandra", "memory"
+  badger:
+    directory: /var/lib/jaeger/badger/data
+    ephemeral: false
+
+ingester:
+  deadlockInterval: 5m
+
+query:
+  base_path: /
+
+processors:
+  batch:
+    send_batch_size: 512
+    timeout: 5s
+
+logging:
+  level: info

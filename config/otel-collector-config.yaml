@@ -1,0 +1,21 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+
+exporters:
+  jaeger:
+    endpoint: "${JAEGER_ENDPOINT}"
+    headers:
+      Authorization: "Bearer ${OTEL_AUTH_TOKEN}"
+    insecure: true
+
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [jaeger]
+

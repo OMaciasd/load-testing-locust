@@ -1,0 +1,155 @@
+services:
+  jaeger:
+    build:
+      context: ./observability/jaeger # Asegúrate de que el contexto sea correcto
+      dockerfile: Dockerfile
+    volumes:
+      - ./observability/jaeger/jaeger-config.yaml:/etc/jaeger/jaeger-config.yaml
+      - ./observability/jaeger/sampling.json:/etc/jaeger/sampling.json
+    container_name: jaeger
+    hostname: jaeger
+    ports:
+      - "127.0.0.1:16686:16686"
+      - "127.0.0.1:14250:14250"
+      - "127.0.0.1:14268:14268"
+
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+      - JAEGER_CONFIG=/etc/jaeger/jaeger-config.yaml
+    networks:
+      - observability_network
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:16686"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    hostname: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - observability_network
+    restart: unless-stopped
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  prom-exporter:
+    image: prom/node-exporter:latest
+    container_name: prom-exporter
+    hostname: prom-exporter
+    ports:
+      - "127.0.0.1:9100:9100"
+    networks:
+      - observability_network
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  locust:
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile
+    container_name: locust
+    hostname: locust
+    volumes:
+      - ./scripts:/mnt/locust
+    ports:
+      - "127.0.0.1:8089:8089"
+      - "127.0.0.1:8000:8000"
+    command: -f /mnt/locust/locustfile.py --host=http://0.0.0.0:5000
+    networks:
+      - observability_network
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://locust:8089"]
+
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  locust_exporter:
+    image: containersol/locust_exporter
+    container_name: locust_exporter
+    hostname: locust-exporter
+    ports:
+      - "127.0.0.1:9101:9101"
+    environment:
+      - LOCUST_EXPORTER_URI=http://locust:8089
+    networks:
+      - observability_network
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9101/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.121.0
+    container_name: otel-collector
+    hostname: otel-collector
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    networks:
+      - observability_network
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4318/health_check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      locust:
+        condition: service_healthy
+
+networks:
+  observability_network:
+    driver: bridge
