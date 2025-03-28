@@ -1,132 +1,129 @@
-# 🚀 Performance Testing with Locust, Prometheus & Grafana
+# 🚀 **Load Testing with Locust, InfluxDB, and Grafana**
+
+## 📌 **Overview**
+
+This project integrates **Locust** 🐍 for load testing, **InfluxDB** 📊 for metric collection, and **Grafana** 📈 for real-time visualization. The goal is to simulate high-traffic scenarios, monitor system performance, and analyze results efficiently. The entire environment is orchestrated with **Docker Compose** for easy deployment and execution.
 
 ---
 
-## 📌 Overview
+## 📂 **Project Structure**
 
-This project integrates **Locust** 🐍 for load testing, **Prometheus** 📊 for metric collection, and **Grafana** 📈 for real-time visualization. The goal is to simulate high-traffic scenarios, monitor system performance, and analyze results efficiently.
-
----
-
-## 🛠️ Tech Stack
-
-- **Locust** 🐍 - Load testing framework (Python)
-- **Prometheus** 📊 - Metrics collection and monitoring
-- **Grafana** 📈 - Dashboard visualization
-- **Docker** 🐳 - Containerization
-- **Jaeger** 🕵️ - Distributed tracing
-- **Playwright** 🎭 - UI automation testing
-
----
-
-## 📂 Project Structure
-
- ```bash
- 📁 locust-prometheus-grafana
-  ├── 📁 locust
-  │   ├── locustfile.py        # Locust test scenarios
-  │   ├── requirements.txt     # Python dependencies
-  │   ├── config.yaml          # Config file
-  ├── 📁 prometheus
-  │   ├── prometheus.yml       # Prometheus configuration
-  ├── 📁 grafana
-  │   ├── grafana.ini          # Grafana settings
-  ├── 📁 tracing
-  │   ├── docker-compose.yml   # Jaeger setup
-  ├── docker-compose.yml       # Full stack deployment
-  ├── README.md                # Documentation
- ```
+  ``` plaintext
+  📂 load-testing-locust/
+  │── 📂 app/                   # Source code of the application under test
+  │── 📂 config/                # Configuration files for Docker, InfluxDB, Locust, and Grafana
+  │── 📂 docs/                  # Documentation and reports
+  │── 📂 observability/         # Metrics and tracing configuration
+  │── 📂 scripts/               # Automation and execution scripts
+  │── 📂 tests/                 # Load testing scripts with Locust
+  │── docker-compose.yml        # Service orchestration with Docker
+  │── README.md                 # Main documentation
+  │── setup.sh                  # Installation script
+  ```
 
 ---
 
-## 🚀 Getting Started
+## ✅ **Prerequisites**
 
-### 1️⃣ Prerequisites
+Ensure you have the following installed before running the project:
 
-Ensure you have the following installed:
-
-- **Docker** 🐳
-- **Python 3.x** 🐍
-
-### 2️⃣ Install Dependencies
-
- ```bash
- cd locust
- pip install -r requirements.txt
- ```
-
-### 3️⃣ Run Locust Load Test
-
- ```bash
- locust -f locustfile.py --headless --users 1000 --spawn-rate 5 --host=https://your-app.com
- ```
-
-### 4️⃣ Run Prometheus & Grafana
-
-Using **Docker Compose**:
-
- ```bash
- docker-compose up -d
- ```
-
-Access **Grafana** at: [http://localhost:3000](http://localhost:3000)
+- 🐳 **[Docker](https://www.docker.com/)** and **Docker Compose**
+- 🐍 **[Python 3.x](https://www.python.org/)** (for manual testing if needed)
 
 ---
 
-## 📊 Monitoring & Observability
+## ⚙️ **Installation and Configuration**
 
-### 🔹 **Prometheus Metrics Endpoint**
+1️⃣ Clone the repository:
 
-Locust exposes metrics at: `http://localhost:8000/metrics`
+   ```sh
+   git clone https://github.com/omaciasd/load-testing-locust.git
+   cd load-testing-locust
+   ```
 
-### 🔹 **Jaeger Distributed Tracing**
+2️⃣ Copy the environment variables template:
 
- ```bash
- docker run -d --name jaeger -p 16686:16686 jaegertracing/all-in-one:latest
- ```
+   ```sh
+   cp config/.env.example config/.env
+   ```
 
-Access **Jaeger UI** at: [http://localhost:16686](http://localhost:16686)
+   Then edit `config/.env` to customize settings.
 
----
+3️⃣ Build and start the services:
 
-## 🧪 UI Automation Testing
-
-Run Playwright tests:
-
- ```python
- from playwright.sync_api import sync_playwright
-
- with sync_playwright() as p:
-     browser = p.chromium.launch()
-     page = browser.new_page()
-     page.goto("https://your-app.com")
-     print(page.title())
-     browser.close()
- ```
+   ```sh
+   docker-compose up -d --build
+   ```
 
 ---
 
-## 📢 Alerts & Notifications
+## 🛠️ **How to Use the Project**
 
-Configure **Prometheus Alertmanager** to send Slack alerts:
+### 🏁 **1️⃣ Access the Locust UI**
 
- ```yaml
- receivers:
-   - name: 'slack'
-     slack_configs:
-       - channel: '#alerts'
-         api_url: 'https://hooks.slack.com/services/...'
- ```
+Open your browser and go to:
+   👉 [http://localhost:8089](http://localhost:8089)
+Here, you can define the number of users and the ramp-up rate to start the test.
+
+### 📊 **2️⃣ Monitor Metrics in Grafana**
+
+Access Grafana at:
+   👉 [http://localhost:3000](http://localhost:3000)
+
+A preconfigured dashboard for Locust metrics is available. Navigate to **Dashboards → Load Testing Overview** to analyze key metrics such as:
+
+- Requests per second (RPS)
+- Response times
+- Error rates
+- Active users
+
+### 🎯 **3️⃣ Controlled Test Execution**
+
+Locust is designed to be launched from the **UI only**, ensuring a controlled environment for the client.
 
 ---
 
-## 📜 License
+## 🔍 **Verify Data in InfluxDB**
+
+To check if Locust is sending data to InfluxDB, run:
+
+   ```sh
+   docker exec -it influxdb influx query --org my-org 'from(bucket:"locust_metrics") |> range(start: -5m)'
+   ```
+
+You should see response times and HTTP status codes.
+
+---
+
+## 🛑 **Stop and Clean Up the Environment**
+
+To stop services:
+
+   ```sh
+   docker-compose down
+   ```
+
+To remove all stored volumes and data:
+
+   ```sh
+   docker-compose down -v
+   ```
+
+---
+
+## 📜 **License**
 
 This project is licensed under the **MIT License**.
 
 ---
 
-## 🤝 Contributing
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature-new`)
+3. Commit your changes (`git commit -m 'Add new feature'`)
+4. Push to the branch (`git push origin feature-new`)
+5. Open a Pull Request
 
 Pull requests are welcome! Feel free to **fork** this repo and submit improvements. 🚀
 

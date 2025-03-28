@@ -1,2 +1,95 @@
-logs/*
+# 🛑 Ignorar reportes temporales
 reports/*
+*.drawio.bkp
+
+# 🛑 Ignorar entornos virtuales
+.venv/
+venv/
+myenv/
+new_env/
+
+# 🛑 Ignorar archivos generados por Python
+__pycache__/
+*.pyc
+*.pyo
+*.pid
+*.pyd
+
+# 🛑 Ignorar datos generados por pruebas y logs
+data/
+logs/
+*.log
+
+# 🛑 Ignorar archivos de configuración local y temporales
+.env
+*.bak
+*.tmp
+*.swp
+*.local
+
+# 🛑 Ignorar imágenes y archivos binarios innecesarios
+*.eps
+*.ico
+*.jpg
+*.png
+*.pdf
+*.tiff
+*.webp
+
+# 🛑 Ignorar archivos de bases de datos temporales
+*.db
+*.sqlite3
+*.out
+*.csv
+*.json
+
+# 🛑 Ignorar configuraciones de editores y herramientas de desarrollo
+.vscode/
+.idea/
+
+# 🛑 Ignorar dependencias instaladas localmente
+modules/
+node_modules/
+
+# 🛑 Ignorar archivos de seguridad sensibles
+*.pem
+*.key
+*.crt
+
+# 🛑 Ignorar archivos de instalación y scripts temporales
+get-pip.py
+setup.sh
+
+# 🛑 Ignorar archivos temporales de Docker
+docker/*.bak
+docker/*.tmp
+docker/.env
+docker/.DS_Store
+.env
+docker-compose.override.yml
+
+# Evitar subir datos temporales de monitoreo
+observability/grafana/data/
+observability/grafana/logs/
+observability/prometheus/data/
+
+# Evitar subir logs y datos temporales de Jaeger
+observability/jaeger/*.log
+observability/jaeger/traces/
+observability/jaeger/data/
+
+utils/
+
+# Reportes generados
+docs/*.pdf
+
+# Otros archivos generados
+*.swp
+*.swo
+
+# Logs y configuración local
+logrotate.conf
+supervisord.conf
+
+# Archivos CSV de prueba
+users.csv

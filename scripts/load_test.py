@@ -1,1 +1,0 @@
-# Load test script using Locust
