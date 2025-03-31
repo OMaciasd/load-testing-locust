@@ -1,15 +1,9 @@
-name: Run Tests
+name: CI Pipeline
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: [push, pull_request]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -18,12 +12,95 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.9"
+
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('app/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Validate Dependencies File
+        run: test -f app/requirements.txt && echo "✅ requirements.txt found" || exit 1
 
       - name: Install Dependencies
         run: |
-          pip install -r requirements.txt
-          pip install pytest requests-mock tenacity
+          pip install -r app/requirements.txt
 
-      - name: Run Tests
-        run: pytest test_marketplace.py --disable-warnings
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('app/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Run Unit Tests
+        run: pytest tests/ --cov=app --cov-report=xml -n auto
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Linter
+        run: |
+          flake8 app/ tests/
+          black --check app/ tests/
+          isort --check app/ tests/
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Security Checks
+        run: |
+          pip install safety pip-audit bandit gitleaks
+          safety check > safety-report.txt
+          pip-audit > pip-audit-report.txt
+          bandit -r app/ > bandit-report.txt
+          gitleaks detect --source . --verbose > gitleaks-report.txt
+
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: |
+            safety-report.txt
+            pip-audit-report.txt
+            bandit-report.txt
+            gitleaks-report.txt
+
+  docker-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Scan Docker Image
+        run: |
+          docker build -t myapp .
+          trivy image myapp

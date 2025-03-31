@@ -1,33 +1,33 @@
-# 🛑 Ignorar reportes temporales
+# 🚫 Ignore temporary reports
 reports/*
 *.drawio.bkp
 
-# 🛑 Ignorar entornos virtuales
+# 🚫 Ignore virtual environments
 .venv/
 venv/
 myenv/
 new_env/
 
-# 🛑 Ignorar archivos generados por Python
+# 🚫 Ignore Python-generated files
 __pycache__/
 *.pyc
 *.pyo
 *.pid
 *.pyd
 
-# 🛑 Ignorar datos generados por pruebas y logs
+# 🚫 Ignore test data and logs
 data/
 logs/
 *.log
 
-# 🛑 Ignorar archivos de configuración local y temporales
+# 🚫 Ignore local and temporary configuration files
 .env
 *.bak
 *.tmp
 *.swp
 *.local
 
-# 🛑 Ignorar imágenes y archivos binarios innecesarios
+# 🚫 Ignore unnecessary images and binary files
 *.eps
 *.ico
 *.jpg
@@ -36,31 +36,31 @@ logs/
 *.tiff
 *.webp
 
-# 🛑 Ignorar archivos de bases de datos temporales
+# 🚫 Ignore temporary database files
 *.db
 *.sqlite3
 *.out
 *.csv
 *.json
 
-# 🛑 Ignorar configuraciones de editores y herramientas de desarrollo
+# 🚫 Ignore editor and development tool configurations
 .vscode/
 .idea/
 
-# 🛑 Ignorar dependencias instaladas localmente
+# 🚫 Ignore locally installed dependencies
 modules/
 node_modules/
 
-# 🛑 Ignorar archivos de seguridad sensibles
+# 🚫 Ignore sensitive security files
 *.pem
 *.key
 *.crt
 
-# 🛑 Ignorar archivos de instalación y scripts temporales
+# 🚫 Ignore installation and temporary scripts
 get-pip.py
 setup.sh
 
-# 🛑 Ignorar archivos temporales de Docker
+# 🚫 Ignore temporary Docker files
 docker/*.bak
 docker/*.tmp
 docker/.env
@@ -68,29 +68,33 @@ docker/.DS_Store
 .env
 docker-compose.override.yml
 
-# Evitar subir datos temporales de monitoreo
+# 🚫 Ignore temporary monitoring data
 observability/grafana/data/
 observability/grafana/logs/
 observability/prometheus/data/
 
-# Evitar subir logs y datos temporales de Jaeger
+# 🚫 Ignore Jaeger logs and temporary data
 observability/jaeger/*.log
 observability/jaeger/traces/
 observability/jaeger/data/
 
+# 🚫 Ignore utility scripts
 utils/
 
-# Reportes generados
+# 🚫 Ignore generated reports
 docs/*.pdf
 
-# Otros archivos generados
+# 🚫 Ignore other generated files
 *.swp
 *.swo
 
-# Logs y configuración local
+# 🚫 Ignore local logs and configuration files
 logrotate.conf
 supervisord.conf
 
-# Archivos CSV de prueba
+# 🚫 Ignore test CSV files
 users.csv
 data/chunks_head/*
+
+# ✅ Allow PNG images in docs/assets/images/
+!docs/assets/images/*.png

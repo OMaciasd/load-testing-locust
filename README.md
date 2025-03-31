@@ -6,7 +6,7 @@ This project integrates **Locust** 🐍 for load testing, **InfluxDB** 📊 for 
 
 ---
 
-## 📂 **Project Structure**
+## 📚 **Project Structure**
 
   ``` plaintext
   📂 load-testing-locust/
@@ -16,6 +16,7 @@ This project integrates **Locust** 🐍 for load testing, **InfluxDB** 📊 for 
   │── 📂 observability/         # Metrics and tracing configuration
   │── 📂 scripts/               # Automation and execution scripts
   │── 📂 tests/                 # Load testing scripts with Locust
+  │── 📂 Makefile               # Automation commands
   │── docker-compose.yml        # Service orchestration with Docker
   │── README.md                 # Main documentation
   │── setup.sh                  # Installation script
@@ -29,6 +30,7 @@ Ensure you have the following installed before running the project:
 
 - 🐳 **[Docker](https://www.docker.com/)** and **Docker Compose**
 - 🐍 **[Python 3.x](https://www.python.org/)** (for manual testing if needed)
+- 💪 **[Make](https://www.gnu.org/software/make/)** (for automation)
 
 ---
 
@@ -52,20 +54,42 @@ Ensure you have the following installed before running the project:
 3️⃣ Build and start the services:
 
    ```sh
-   docker-compose up -d --build
+   make up
    ```
 
 ---
 
-## 🛠️ **How to Use the Project**
+## 🛠️ **Using the Makefile**
 
-### 🏁 **1️⃣ Access the Locust UI**
+The `Makefile` provides simple commands for managing the environment:
+
+- **Rebuild services:**
+
+  ```sh
+  make rebuild
+  ```
+
+- **View logs:**
+
+  ```sh
+  make logs
+  ```
+
+- **Run tests:**
+
+  ```sh
+  make test
+  ```
+
+---
+
+## 🏁 **1️⃣ Access the Locust UI**
 
 Open your browser and go to:
    👉 [http://localhost:8089](http://localhost:8089)
 Here, you can define the number of users and the ramp-up rate to start the test.
 
-### 📊 **2️⃣ Monitor Metrics in Grafana**
+## 📊 **2️⃣ Monitor Metrics in Grafana**
 
 Access Grafana at:
    👉 [http://localhost:3000](http://localhost:3000)
@@ -76,10 +100,6 @@ A preconfigured dashboard for Locust metrics is available. Navigate to **Dashboa
 - Response times
 - Error rates
 - Active users
-
-### 🎯 **3️⃣ Controlled Test Execution**
-
-Locust is designed to be launched from the **UI only**, ensuring a controlled environment for the client.
 
 ---
 
@@ -95,23 +115,23 @@ You should see response times and HTTP status codes.
 
 ---
 
-## 🛑 **Stop and Clean Up the Environment**
+## 🛡️ **Stop and Clean Up the Environment**
 
 To stop services:
 
    ```sh
-   docker-compose down
+   make down
    ```
 
 To remove all stored volumes and data:
 
    ```sh
-   docker-compose down -v
+   make clean
    ```
 
 ---
 
-## 📜 **License**
+## 🐜 **License**
 
 This project is licensed under the **MIT License**.
 
