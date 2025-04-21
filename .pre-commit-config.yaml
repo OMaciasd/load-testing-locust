@@ -1,0 +1,10 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.1  # Usa la última versión estable
+    hooks:
+      - id: gitleaks
+        name: Detect secrets in code
+        args: ["--config=.gitleaks.toml"]
+        pass_filenames: false
+language: system
+language_version: "/usr/bin/bash"

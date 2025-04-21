@@ -1,0 +1,29 @@
+[[rules]]
+    id = "aws_api_key"
+    description = "AWS API key"
+    regex = '''AKIA[0-9A-Z]{16}'''
+    tags = ["key", "aws", "api-key"]
+    severity = "CRITICAL"
+
+[[rules]]
+    id = "generic_api_key"
+    description = "API key"
+    regex = '''API_KEY\s*=\s*["']?([A-Za-z0-9_-]+)["']?'''
+    tags = ["key", "api-key"]
+    severity = "CRITICAL"
+
+[[rules]]
+id = "clave_simple"
+description = "Clave simple"
+regex = '''clave\s*=\s*[0-9]+'''
+secret_group = 0
+tags = ["custom", "clave"]
+severity = "LOW"
+
+[[rules]]
+id = "simple_password"
+description = "Simple password in code"
+regex = '''password\s*=\s*["']?[A-Za-z0-9@#\-_\$!%]+["']?'''
+secret_group = 0
+tags = ["custom", "password"]
+severity = "MEDIUM"

@@ -1,102 +1,129 @@
-import os
-import yaml
+from prometheus_client import Counter, Histogram, Gauge, start_http_server
+from river.anomaly import HalfSpaceTrees
 import logging
 import gc
-from prometheus_client import Counter, Histogram
-from river.anomaly import HalfSpaceTrees
-from dotenv import load_dotenv
-from locust import HttpUser, task, between
+import psutil
+import threading
+import time
+import os
 
+METRICS_PORT = int(os.getenv("METRICS_PORT", 8088))
 
-def load_config():
-    load_dotenv()
-    try:
-        with open("config.yaml", "r") as f:
-            return yaml.safe_load(f) or {}
-    except FileNotFoundError:
-        return {}
-
-
-config = load_config()
-
-LOG_FILE = os.getenv("LOG_FILE", config.get("log_file", "app.log"))
+# Configuración de logging
 logging.basicConfig(
-    filename=LOG_FILE,
+    filename="app.log",
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
+# Configuración de Garbage Collector
+gc.set_threshold(10000, 10, 10)
 
-def get_env_variable(var_name, default=None, required=False, cast=str):
-    value = os.getenv(var_name, config.get(var_name, default))
-    if required and value is None:
-        raise ValueError(f"⚠️ The variable '{var_name}' is required.")
+# Métricas de autenticación
+TOKEN_RENEWAL_FAILURES = Counter("token_renewal_failures", "Total de fallos en la renovación del token")
+
+# Métricas del sistema
+PYTHON_GC_COLLECTED = Gauge("python_gc_collected_objects", "Número de objetos recolectados por el GC")
+REQUEST_FAILURES = Counter("request_failures_total", "Cantidad de fallos en las solicitudes", ["endpoint"])
+REQUEST_LATENCY = Histogram("http_request_duration_seconds", "Tiempo de respuesta por endpoint", ["endpoint", "status_code"])
+HTTP_ERRORS = Counter("http_errors_total", "Total de errores HTTP", ["endpoint", "status_code"])
+MEMORY_USAGE = Gauge("python_process_memory_mb", "Uso de memoria del proceso en MB")
+CPU_USAGE = Gauge("python_process_cpu_percent", "Uso de CPU del proceso en %")
+THREAD_COUNT = Gauge("python_process_thread_count", "Número de hilos activos")
+UPTIME = Gauge("python_process_uptime_seconds", "Tiempo de ejecución del proceso")
+ACTIVE_CONNECTIONS = Gauge("active_connections", "Número de conexiones activas")
+
+# Modelo de detección de anomalías
+hst = HalfSpaceTrees(window_size=200, n_trees=30, height=20)
+
+def detect_anomaly(latency, endpoint, status_code):
+    score = hst.score_one({"latency": latency})
+    if score > 0.75:
+        logger.warning(f"⚠️ Anomalía detectada en {endpoint} (Score: {score:.2f}, Código: {status_code}) con latencia de {latency:.2f}s")
+
+def track_http_error(endpoint, status_code):
+    if status_code >= 400:
+        HTTP_ERRORS.labels(endpoint=endpoint, status_code=status_code).inc()
+
+def measure_request(endpoint, status_code, func, *args, **kwargs):
+    start_time = time.time()
     try:
-        return cast(value)
-    except ValueError:
-        logger.warning(f"⚠️ Invalid value for {var_name}, using {default}")
-        return default
+        result = func(*args, **kwargs)
+        latency = time.time() - start_time
+        REQUEST_LATENCY.labels(endpoint=endpoint, status_code=status_code).observe(latency)
+        detect_anomaly(latency, endpoint, status_code)
+        return result
+    except Exception as e:
+        REQUEST_FAILURES.labels(endpoint=endpoint).inc()
+        logger.error(f"❌ Error en {endpoint}: {str(e)}")
+        raise
 
+class AuthManager:
+    def __init__(self):
+        self.token = None
 
-MAX_DELAY = get_env_variable("MAX_DELAY", required=True, cast=int)
-METRICS_PORT = get_env_variable("METRICS_PORT", required=True, cast=int)
-WINDOW_SIZE = get_env_variable("HST_WINDOW_SIZE", required=True, cast=int)
-N_TREES = get_env_variable("HST_N_TREES", required=True, cast=int)
-HEIGHT = get_env_variable("HST_HEIGHT", required=True, cast=int)
-ANOMALY_THRESHOLD = config.get("anomaly", {}).get("threshold", 0.5)
+    def get_token(self):
+        return "nuevo_token_generado"
 
-gc.set_threshold(
-    get_env_variable("GC_THRESHOLD_0", 700, cast=int),
-    get_env_variable("GC_THRESHOLD_1", 10, cast=int),
-    get_env_variable("GC_THRESHOLD_2", 10, cast=int),
-)
+    def renew_token(self, retries=3, delay=2):
+        for attempt in range(retries):
+            try:
+                new_token = self.get_token()
+                if new_token:
+                    self.token = new_token
+                    logger.info("✅ Token renovado correctamente")
+                    return
+                else:
+                    logger.warning(f"🔄 Token no obtenido (Intento {attempt+1}/{retries})")
+                    TOKEN_RENEWAL_FAILURES.inc()
+            except Exception as e:
+                TOKEN_RENEWAL_FAILURES.inc()
+                logger.error(f"❌ Error al renovar token: {str(e)}")
+            time.sleep(delay * (2 ** attempt))
 
-hst = HalfSpaceTrees(window_size=WINDOW_SIZE, n_trees=N_TREES, height=HEIGHT)
+def collect_gc_metrics():
+    try:
+        if gc.isenabled():
+            gc.collect()
+        collected = gc.get_stats()[0]["collected"] if hasattr(gc, "get_stats") else 0
+        process = psutil.Process()
+        memory_usage = process.memory_info().rss / (1024 * 1024)
+        process.cpu_percent(interval=None)
+        time.sleep(0.1)
+        cpu_usage = process.cpu_percent(interval=None)
+        thread_count = len(threading.enumerate())
+        connections = len(process.connections())
 
-METRICS = {
-    "request_failures": Counter(
-        "request_failures_total", "Total request failures", ["endpoint"]
-    ),
-    "request_latency": Histogram(
-        "http_request_duration_seconds",
-        "Response time", ["endpoint", "status_code"]
-    ),
-    "anomalies_detected": Counter(
-        "anomalies_detected", "Detected anomalies"
-    ),
-}
+        PYTHON_GC_COLLECTED.set(collected)
+        MEMORY_USAGE.set(memory_usage)
+        CPU_USAGE.set(cpu_usage)
+        THREAD_COUNT.set(thread_count)
+        ACTIVE_CONNECTIONS.set(connections)
 
+        logger.info(f"📊 GC: {collected} objetos recolectados")
+        logger.info(f"📊 Memoria: {memory_usage:.2f} MB, CPU: {cpu_usage:.2f}%, Hilos: {thread_count}, Conexiones: {connections}")
+    except Exception as e:
+        logger.error(f"❌ Error en métricas: {str(e)}")
 
-class LoadTestUser(HttpUser):
-    wait_time = between(1, MAX_DELAY)
+def start_gc_metrics_collection():
+    def run():
+        while True:
+            collect_gc_metrics()
+            time.sleep(30)
+    threading.Thread(target=run, daemon=True).start()
 
-    @task
-    def test_endpoint(self):
-        endpoint = "/api/data"
-        with self.client.get(endpoint, catch_response=True) as response:
-            latency = response.elapsed.total_seconds()
-            METRICS[
-                "request_latency"
-            ].labels(
-                endpoint=endpoint, status_code=response.status_code
-            ).observe(latency)
+def update_uptime():
+    start_time = time.time()
+    while True:
+        UPTIME.set(time.time() - start_time)
+        time.sleep(10)
 
-            score = hst.score_one({"latency": latency})
-            if score > ANOMALY_THRESHOLD:
-                METRICS["anomalies_detected"].inc()
-                logger.warning(
-                    f"⚠️ Anomaly detected in {endpoint}:"
-                    "{score:.3f} (latency: {latency}s)"
-                )
-
-            if response.status_code != 200:
-                METRICS["request_failures"].labels(endpoint=endpoint).inc()
-                response.failure(
-                    f"Failure in {endpoint}: {response.status_code}"
-                )
-
+def start_metrics_server():
+    logger.info(f"🚀 Iniciando servidor de métricas en puerto {METRICS_PORT}")
+    start_http_server(METRICS_PORT)
 
 if __name__ == "__main__":
-    import locust
-    locust.run_single_user(LoadTestUser)
+    start_metrics_server()
+    start_gc_metrics_collection()
+    threading.Thread(target=update_uptime, daemon=True).start()

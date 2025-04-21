@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hst-anomaly-detector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hst
+  template:
+    metadata:
+      labels:
+        app: hst
+    spec:
+      containers:
+      - name: hst
+        image: myrepo/hst-anomaly-detector:latest
+        ports:
+        - containerPort: 8080
